@@ -1,0 +1,14 @@
+# API 및 개인 정보 파일 제외
+telegram_API_GITHUB.txt
+"telegram api 활용방법.txt"
+"신구대학 식단표 홈페이지.txt"
+.env
+
+# 파이썬 캐시 파일 제외
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 실행 파일 및 대용량 강의 자료 제외
+*.pdf
+*.bat
