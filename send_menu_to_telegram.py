@@ -26,27 +26,72 @@ _config = load_telegram_config()
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN") or _config["token"] or 'YOUR_BOT_TOKEN_HERE'
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID") or _config["chat_id"] or 'YOUR_CHAT_ID_HERE'
 
+from bs4 import BeautifulSoup
+import ssl
+
+def get_menu_by_contents_no(contents_no, target_day):
+    """지정된 식당(contents_no)과 날짜의 식단을 가져옵니다."""
+    url = f"https://www.shingu.ac.kr/cms/FR_CON/index.do?MENU_ID=1630&CONTENTS_NO={contents_no}"
+    try:
+        context = ssl._create_unverified_context()
+        with urllib.request.urlopen(url, context=context) as response:
+            html = response.read()
+            soup = BeautifulSoup(html, 'html.parser')
+            
+            items = soup.select('ul.menu_list > li')
+            for item in items:
+                day_tag = item.select_one('.date strong')
+                if day_tag and day_tag.text.strip() == target_day:
+                    menu_dict = {}
+                    boxes = item.select('.menu_box')
+                    for box in boxes:
+                        m_type = box.select_one('.type').get_text(strip=True)
+                        m_content = box.select_one('.menu_list').get_text(separator=" ", strip=True)
+                        menu_dict[m_type] = m_content
+                    return menu_dict
+    except Exception as e:
+        print(f"Error fetching contents_no={contents_no}: {e}")
+    return None
+
 def get_today_menu():
-    """스크래핑한 오늘자 식단 데이터를 반환합니다."""
-    # 한국어 요일 매핑
+    """웹사이트에서 오늘자 식단 데이터를 크롤링합니다."""
     weekday_map = {0: "월요일", 1: "화요일", 2: "수요일", 3: "목요일", 4: "금요일", 5: "토요일", 6: "일요일"}
     now = datetime.now()
+    target_day = now.strftime("%d") # "08" 형식
     today_str = now.strftime("%Y년 %m월 %d일") + f" ({weekday_map[now.weekday()]})"
     
-    # (실제 크롤링 로직 대신 서브에이전트가 크롤링해온 데이터를 사용합니다)
-    menu_info = {
+    print(f"🔍 {today_str} ({target_day}일) 식단을 크롤링 중입니다...")
+    
+    # 1. 학생식당(서관) - CONTENTS_NO=3
+    student_menu = get_menu_by_contents_no(3, target_day) or {}
+    
+    # 2. 교직원식당 - CONTENTS_NO=2
+    staff_menu = get_menu_by_contents_no(2, target_day) or {}
+    
+    # 중식에서 한식/양식 분리 (학생식당)
+    lunch_text = student_menu.get("중식", "")
+    lunch_korean = "정보 없음"
+    lunch_western = "정보 없음"
+    
+    if "**한식**" in lunch_text and "**양식**" in lunch_text:
+        parts = lunch_text.split("**양식**")
+        lunch_korean = parts[0].replace("**한식**", "").strip()
+        lunch_western = parts[1].strip()
+    elif lunch_text:
+        lunch_korean = lunch_text
+
+    return {
         "date": today_str,
         "student_cafeteria": {
-            "breakfast": "햄참치마요덮밥, 하늘보리",
-            "lunch_korean": "순살안동찜닭, 미역국, 쌀밥, 감자고로케(케찹), 비빔막국수, 배추김치",
-            "lunch_western": "미트소스스파게티, 크림스프, 후리가케밥, 프렌치토스트, 샐러드(드레싱), 배추김치",
-            "snack": "불닭크림떡볶이, 튀김, 단무지"
+            "breakfast": student_menu.get("조식", "정보 없음"),
+            "lunch_korean": lunch_korean,
+            "lunch_western": lunch_western,
+            "snack": student_menu.get("분식", "정보 없음")
         },
         "staff_cafeteria": {
-            "lunch": "오징어깻잎볶음, 소고기뭇국, 메밀전병구이, 메추리알조림, 들기름비빔국수, 배추김치"
+            "lunch": staff_menu.get("중식", "정보 없음")
         }
     }
-    return menu_info
 
 def format_menu_message(menu):
     """식단 데이터를 텔레그렘 메시지용 텍스트로 변환합니다."""
