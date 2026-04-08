@@ -28,9 +28,14 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID") or _config["chat_id"] or '
 
 def get_today_menu():
     """스크래핑한 오늘자 식단 데이터를 반환합니다."""
+    # 한국어 요일 매핑
+    weekday_map = {0: "월요일", 1: "화요일", 2: "수요일", 3: "목요일", 4: "금요일", 5: "토요일", 6: "일요일"}
+    now = datetime.now()
+    today_str = now.strftime("%Y년 %m월 %d일") + f" ({weekday_map[now.weekday()]})"
+    
     # (실제 크롤링 로직 대신 서브에이전트가 크롤링해온 데이터를 사용합니다)
     menu_info = {
-        "date": "2026년 4월 1일 (수요일)",
+        "date": today_str,
         "student_cafeteria": {
             "breakfast": "햄참치마요덮밥, 하늘보리",
             "lunch_korean": "순살안동찜닭, 미역국, 쌀밥, 감자고로케(케찹), 비빔막국수, 배추김치",
