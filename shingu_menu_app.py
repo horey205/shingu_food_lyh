@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import urllib.request
 import json
+import os
 from datetime import datetime, timedelta
 
 # -----------------------------------------------------------------------------
@@ -24,8 +25,8 @@ def load_telegram_config():
     return config
 
 _config = load_telegram_config()
-TELEGRAM_BOT_TOKEN = _config["token"] or 'YOUR_BOT_TOKEN_HERE'
-TELEGRAM_CHAT_ID = _config["chat_id"] or 'YOUR_CHAT_ID_HERE'
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN") or _config["token"] or 'YOUR_BOT_TOKEN_HERE'
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID") or _config["chat_id"] or 'YOUR_CHAT_ID_HERE'
 
 # 서버에서 가져온 식단 데이터 (크롤링 결과 캐싱)
 MENU_DATA = {

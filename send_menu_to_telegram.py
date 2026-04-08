@@ -1,5 +1,6 @@
 import urllib.request
 import json
+import os
 from datetime import datetime
 
 # -----------------------------------------------------------------------------
@@ -22,8 +23,8 @@ def load_telegram_config():
     return config
 
 _config = load_telegram_config()
-TELEGRAM_BOT_TOKEN = _config["token"] or 'YOUR_BOT_TOKEN_HERE'
-TELEGRAM_CHAT_ID = _config["chat_id"] or 'YOUR_CHAT_ID_HERE'
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN") or _config["token"] or 'YOUR_BOT_TOKEN_HERE'
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID") or _config["chat_id"] or 'YOUR_CHAT_ID_HERE'
 
 def get_today_menu():
     """스크래핑한 오늘자 식단 데이터를 반환합니다."""
